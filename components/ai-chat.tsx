@@ -183,18 +183,17 @@ export function AIChat({ isFloating = false, onError }: AIChatProps) {
       setMessages((prev) => [...prev, { role: "assistant", content: assistantResponse }])
       clearTimeout(timeoutId)
       setRetryCount(0)
-    } catch (err) {
-      console.error("Error al enviar mensaje:", err)
+    } catch (error) {
+      console.error("Error al enviar mensaje:", error)
 
-      // Manejar el error de forma segura
-      const isTimeoutError = 
-        (err instanceof DOMException && err.name === "AbortError") || 
-        (err instanceof Error && err.message.includes("timeout"))
+      // Determinar si es un error de timeout
+      const isTimeoutError =
+        error.name === "AbortError" || (error instanceof Error && error.message.includes("timeout"))
 
       const errorMessage = isTimeoutError
         ? "La solicitud ha excedido el tiempo de espera. Por favor, intenta de nuevo."
-        : err instanceof Error
-          ? err.message
+        : error instanceof Error
+          ? error.message
           : "Error desconocido"
 
       setError(errorMessage)

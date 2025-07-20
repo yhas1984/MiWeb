@@ -11,13 +11,13 @@ export async function findUserByEmail(email: string): Promise<User | null> {
     const supabase = createServerSupabaseClient()
     const normalizedEmail = email.toLowerCase()
 
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", normalizedEmail)
-      .maybeSingle()  // Usar maybeSingle para evitar errores cuando no hay registros
+    const { data, error } = await supabase.from("users").select("*").eq("email", normalizedEmail).single()
 
     if (error) {
+      if (error.code === "PGRST116") {
+        // No se encontró el usuario (error de single)
+        return null
+      }
       console.error(`${LOG_PREFIX} Error al buscar usuario:`, error)
       return null
     }
@@ -109,10 +109,7 @@ export async function updateUser(email: string, updates: Partial<User>): Promise
     if (updates.verified !== undefined) updateData.verified = updates.verified
     if (updates.referredBy) updateData.referred_by = updates.referredBy
 
-    const { error } = await supabase
-      .from("users")
-      .update(updateData)
-      .eq("email", normalizedEmail)
+    const { error } = await supabase.from("users").update(updateData).eq("email", normalizedEmail)
 
     if (error) {
       console.error(`${LOG_PREFIX} Error al actualizar usuario:`, error)
@@ -144,34 +141,25 @@ export async function checkUserStatus(email: string): Promise<{ isRegistered: bo
 }
 
 /**
- * Marca un usuario como verificado - VERSIÓN CORREGIDA
+ * Marca un usuario como verificado
  */
 export async function markUserAsVerified(email: string): Promise<boolean> {
   try {
-    const supabase = createServerSupabaseClient()
-    const normalizedEmail = email.toLowerCase()
+    const user = await findUserByEmail(email)
 
-    // Primero verificar si el usuario existe
-    const user = await findUserByEmail(normalizedEmail)
-    
     if (!user) {
-      console.error(`${LOG_PREFIX} Usuario no encontrado: ${normalizedEmail}`)
-      return false
+      // Crear usuario verificado si no existe
+      const newUser = await createUser({
+        email,
+        name: email.split("@")[0],
+        verified: true,
+      })
+
+      return !!newUser
     }
 
-    // Actualizar solo el campo de verificación
-    const { error } = await supabase
-      .from("users")
-      .update({ verified: true })
-      .eq("email", normalizedEmail)
-
-    if (error) {
-      console.error(`${LOG_PREFIX} Error al actualizar usuario:`, error)
-      return false
-    }
-
-    console.log(`${LOG_PREFIX} Usuario marcado como verificado: ${normalizedEmail}`)
-    return true
+    // Actualizar usuario existente
+    return await updateUser(email, { verified: true })
   } catch (error) {
     console.error(`${LOG_PREFIX} Error al marcar usuario como verificado:`, error)
     return false

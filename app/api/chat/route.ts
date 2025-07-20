@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       content: `Eres el asistente virtual de Tu Envio Express, una empresa que ofrece servicios de cambio de divisas entre Euros (EUR) y Bolívares (VES).
 
 Información importante:
-- La empresa se llama Tu Envio Express (VYE PARTNERS LLC)
+- La empresa se llama Tu Envio Express (VYE PARTNERS LLP)
 - Está ubicada en Londres, Reino Unido
 - SOLO ofrece servicios de cambio de Euros a Bolívares venezolanos
 - NO envía paquetes ni realiza envíos físicos de ningún tipo, a pesar del nombre "Tu Envio Express", la empresa SOLO se dedica al cambio de divisas
@@ -176,9 +176,9 @@ Responde de manera amable, profesional y concisa. Si te preguntan sobre envío d
     } catch (apiError) {
       console.error("Error al llamar a OpenRouter API:", apiError)
 
-      // Determinar si es un error de timeout - CORRECCIÓN: Manejo seguro de tipo unknown
-      const isTimeoutError = apiError instanceof Error && 
-        (apiError.name === "AbortError" || apiError.message.includes("timeout"))
+      // Determinar si es un error de timeout
+      const isTimeoutError =
+        apiError.name === "AbortError" || (apiError instanceof Error && apiError.message.includes("timeout"))
 
       const errorMessage = isTimeoutError
         ? "La solicitud ha excedido el tiempo de espera. Por favor, intenta de nuevo."

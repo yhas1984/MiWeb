@@ -1,11 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateOTP, saveOTP } from "@/services/verification-service-supabase"
 import { sendVerificationEmail } from "@/services/email-service"
+// Importamos correctamente la función de notificaciones
 import { addNotificationToSupabase } from "@/lib/notification-service-supabase"
-
-// Objetos separados para diferentes propósitos
-const requestInProgress: Record<string, { timestamp: number; inProgress: boolean; requestId?: string }> = {}
-const emailSentCache: Record<string, { timestamp: number }> = {}
 
 // Añadir al inicio del archivo, después de las importaciones
 const LOG_PREFIX = "[SEND-VERIFICATION]"
@@ -40,8 +37,8 @@ export async function POST(request: NextRequest) {
     const uniqueRequestKey = `email_request_${normalizedEmail}_${new Date().toISOString().split("T")[0]}`
 
     // Verificar si hay una solicitud en curso para este email
-    if (requestInProgress[uniqueRequestKey] && requestInProgress[uniqueRequestKey].inProgress) {
-      const timeSinceLastRequest = Date.now() - requestInProgress[uniqueRequestKey].timestamp
+    if (global[uniqueRequestKey] && global[uniqueRequestKey].inProgress) {
+      const timeSinceLastRequest = Date.now() - global[uniqueRequestKey].timestamp
 
       // Si hay una solicitud en curso que comenzó hace menos de 10 segundos, rechazar
       if (timeSinceLastRequest < 10000) {
@@ -56,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Marcar que estamos procesando una solicitud para este email
-    requestInProgress[uniqueRequestKey] = {
+    global[uniqueRequestKey] = {
       timestamp: Date.now(),
       inProgress: true,
       requestId,
@@ -65,15 +62,15 @@ export async function POST(request: NextRequest) {
     // Verificar si ya se ha enviado un email recientemente a este destinatario
     const emailCacheKey = `email_sent_${normalizedEmail}_${new Date().toISOString().split("T")[0]}`
 
-    if (emailSentCache[emailCacheKey]) {
-      const timeSinceLastSend = Date.now() - emailSentCache[emailCacheKey].timestamp
+    if (global[emailCacheKey]) {
+      const timeSinceLastSend = Date.now() - new Date(global[emailCacheKey].timestamp).getTime()
       // Si se envió hace menos de 1 minuto, evitar duplicados
       if (timeSinceLastSend < 60000) {
         console.log(`${LOG_PREFIX} [${requestId}] Evitando duplicado, último envío hace ${timeSinceLastSend}ms`)
 
         // Liberar el bloqueo de solicitud en curso
-        if (requestInProgress[uniqueRequestKey]) {
-          requestInProgress[uniqueRequestKey].inProgress = false
+        if (global[uniqueRequestKey]) {
+          global[uniqueRequestKey].inProgress = false
         }
 
         return NextResponse.json({
@@ -94,8 +91,8 @@ export async function POST(request: NextRequest) {
         console.error(`${LOG_PREFIX} [${requestId}] Error al guardar el código OTP para ${normalizedEmail}`)
 
         // Liberar el bloqueo de solicitud en curso
-        if (requestInProgress[uniqueRequestKey]) {
-          requestInProgress[uniqueRequestKey].inProgress = false
+        if (global[uniqueRequestKey]) {
+          global[uniqueRequestKey].inProgress = false
         }
 
         return NextResponse.json(
@@ -108,8 +105,9 @@ export async function POST(request: NextRequest) {
       }
 
       // Marcar este email como enviado ANTES de enviarlo realmente
-      emailSentCache[emailCacheKey] = {
-        timestamp: Date.now(),
+      global[emailCacheKey] = {
+        timestamp: new Date().toISOString(),
+        emailId: requestId,
       }
 
       // Usar el nombre proporcionado o extraerlo del email
@@ -124,8 +122,8 @@ export async function POST(request: NextRequest) {
         console.error(`${LOG_PREFIX} [${requestId}] Error al enviar email a ${email}`)
 
         // Liberar el bloqueo de solicitud en curso
-        if (requestInProgress[uniqueRequestKey]) {
-          requestInProgress[uniqueRequestKey].inProgress = false
+        if (global[uniqueRequestKey]) {
+          global[uniqueRequestKey].inProgress = false
         }
 
         return NextResponse.json(
@@ -154,8 +152,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Liberar el bloqueo de solicitud en curso
-      if (requestInProgress[uniqueRequestKey]) {
-        requestInProgress[uniqueRequestKey].inProgress = false
+      if (global[uniqueRequestKey]) {
+        global[uniqueRequestKey].inProgress = false
       }
 
       console.log(`${LOG_PREFIX} [${requestId}] Solicitud completada con éxito`)
@@ -169,8 +167,8 @@ export async function POST(request: NextRequest) {
       console.error(`${LOG_PREFIX} [${requestId}] Error al enviar email:`, emailError)
 
       // Liberar el bloqueo de solicitud en curso
-      if (requestInProgress[uniqueRequestKey]) {
-        requestInProgress[uniqueRequestKey].inProgress = false
+      if (global[uniqueRequestKey]) {
+        global[uniqueRequestKey].inProgress = false
       }
 
       return NextResponse.json(

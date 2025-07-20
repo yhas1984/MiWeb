@@ -1,6 +1,7 @@
 "use client"
 
 import { DialogTrigger } from "@/components/ui/dialog"
+
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,7 +28,7 @@ export function ExchangeRate({ initialRate = 72 }: ExchangeRateProps) {
   const [lastUpdated, setLastUpdated] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
-  const { isLoggedIn, userEmail } = useUser() // Removido isVerified de aquí
+  const { isLoggedIn, isVerified: userIsVerified } = useUser()
   const [standardRate, setStandardRate] = useState<number>(72)
   const [premiumRate, setPremiumRate] = useState<number>(initialRate)
   const [newRate, setNewRate] = useState<string>("")
@@ -42,11 +43,10 @@ export function ExchangeRate({ initialRate = 72 }: ExchangeRateProps) {
   const [isUpdatingVerification, setIsUpdatingVerification] = useState<boolean>(false)
   const { toast } = useToast()
   const { isAuthenticated, token, login } = useAuth()
-  const { login: userLogin } = useUser()
+  const { userEmail, login: userLogin } = useUser()
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState<boolean>(false)
   const [initialLoadDone, setInitialLoadDone] = useState<boolean>(false)
-  // Estado local para manejar la verificación
-  const [isVerified, setIsVerified] = useState<boolean>(false)
+  const [isVerified, setIsVerified] = useState<boolean>(userIsVerified)
 
   // Añadir un ref para evitar múltiples solicitudes
   const fetchingRatesRef = useRef(false)
@@ -326,11 +326,7 @@ export function ExchangeRate({ initialRate = 72 }: ExchangeRateProps) {
       console.error("Error al actualizar la tasa:", error)
 
       // Si el error es de autenticación, mostrar el diálogo de inicio de sesión
-      if (error instanceof Error && (
-        error.message.includes("401") || 
-        error.message.includes("autorizado") || 
-        error.message.includes("token")
-      )) {
+      if (error.message?.includes("401") || error.message?.includes("autorizado") || error.message?.includes("token")) {
         setIsLoginDialogOpen(true)
         toast({
           title: "Sesión expirada",

@@ -16,14 +16,5 @@
     "email": "usuario3@example.com",
     "name": "Usuario Ejemplo 3",
     "registrationDate": "2025-03-10T09:15:00Z"
-  },
-  {
-    "id": "1752992636121",
-    "email": "y.h.a.s1984@gmail.com",
-    "name": "y.h.a.s1984",
-    "registrationDate": "2025-07-20T06:23:56.121Z",
-    "verified": true,
-    "verificationCode": "544450",
-    "verificationExpires": "2025-07-20T06:53:56.123Z"
   }
 ]

@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { useUser } from "@/contexts/user-context"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+// Importación correcta de los iconos
 import { Menu, Bell, LogOut, User } from "lucide-react"
 
+// URL del logo (actualizada para asegurar que funcione)
 const LOGO_URL =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-03-05%20at%2015.49.43-uEHU6vvrZTFLABzyO55Lhcb201Bdkx.jpeg"
 
@@ -19,6 +21,7 @@ export function Navbar() {
   const { isLoggedIn, userEmail, logout } = useUser()
   const [unreadCount, setUnreadCount] = useState(0)
 
+  // Obtener el número de notificaciones no leídas
   useEffect(() => {
     if (isAuthenticated) {
       const fetchUnreadCount = async () => {
@@ -30,9 +33,8 @@ export function Navbar() {
           })
 
           if (response.ok) {
-            // Corrección: Definir tipo para las notificaciones
-            const notifications: { read: boolean }[] = await response.json()
-            const count = notifications.filter(n => !n.read).length
+            const notifications = await response.json()
+            const count = notifications.filter((n) => !n.read).length
             setUnreadCount(count)
           }
         } catch (error) {
@@ -42,6 +44,7 @@ export function Navbar() {
 
       fetchUnreadCount()
 
+      // Actualizar cada minuto
       const interval = setInterval(fetchUnreadCount, 60000)
       return () => clearInterval(interval)
     }
@@ -73,6 +76,7 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
           <div className="relative h-10 w-10 overflow-hidden rounded-full border border-gray-200">
+            {/* Usar un div con background-image en lugar de Image */}
             <div
               className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: `url(${LOGO_URL})` }}
@@ -84,6 +88,7 @@ export function Navbar() {
 
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => {
+            // No mostrar enlaces de admin a usuarios normales
             if (link.adminOnly && !isAuthenticated) return null
 
             return (
@@ -141,6 +146,7 @@ export function Navbar() {
             <SheetContent side="right">
               <div className="flex flex-col space-y-4 mt-8">
                 {navLinks.map((link) => {
+                  // No mostrar enlaces de admin a usuarios normales
                   if (link.adminOnly && !isAuthenticated) return null
 
                   return (

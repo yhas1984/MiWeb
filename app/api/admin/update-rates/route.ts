@@ -32,31 +32,19 @@ export async function POST(request: NextRequest) {
 
     // Validar datos
     const validation = validateRates(standardRate, premiumRate)
-    const { valid, rates, message } = validation;
 
-    if (!valid) {
+    if (!validation.valid) {
       return NextResponse.json(
         {
           success: false,
-          message: message,
+          message: validation.message,
         },
         { status: 400 },
       )
     }
 
-    // Asegurar que las tasas están definidas cuando valid=true
-    if (!rates) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Error interno: datos de tasas no disponibles",
-        },
-        { status: 500 },
-      )
-    }
-
     // Guardar tasas en Supabase
-    const saved = await saveRatesToSupabase(rates, true)
+    const saved = await saveRatesToSupabase(validation.rates, true)
 
     if (!saved) {
       return NextResponse.json(
@@ -70,8 +58,8 @@ export async function POST(request: NextRequest) {
 
     // Crear objeto con las nuevas tasas
     const newRates = {
-      standardRate: rates.standardRate,
-      premiumRate: rates.premiumRate,
+      standardRate: validation.rates.standardRate,
+      premiumRate: validation.rates.premiumRate,
       lastUpdated: new Date().toISOString(),
     }
 

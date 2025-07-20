@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server" // Importar NextRequest
+import { NextResponse } from "next/server"
 import { verifyToken, extractTokenFromRequest } from "@/config/auth"
 import path from "path"
 import fs from "fs"
@@ -13,8 +13,7 @@ const DEFAULT_RATES = {
   lastUpdated: new Date().toISOString(),
 }
 
-// Agregar tipo NextRequest al parámetro
-export async function POST(request: NextRequest) {
+export async function POST(request) {
   try {
     // Verificar autenticación
     const token = extractTokenFromRequest(request)
@@ -124,7 +123,7 @@ export async function POST(request: NextRequest) {
           {
             success: false,
             message: "Error al guardar las tasas",
-            details: tempError instanceof Error ? tempError.message : "Error desconocido",
+            details: tempError.message,
           },
           { status: 500 },
         )

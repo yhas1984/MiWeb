@@ -10,16 +10,6 @@ console.log(`${LOG_PREFIX} Módulo inicializado - ${new Date().toISOString()}`)
 // Tiempo de expiración del código OTP en minutos
 const OTP_EXPIRATION_MINUTES = 30
 
-// Declaración global para la caché y bloqueos
-declare global {
-  var verificationCodes: Record<string, {
-    code: string;
-    expires: Date;
-    saveId: string;
-  }>;
-  var saveOTPLocks: Record<string, boolean>;
-}
-
 /**
  * Genera un código OTP aleatorio de 6 dígitos
  */
@@ -37,24 +27,9 @@ export async function saveOTP(email: string, code: string): Promise<boolean> {
   const saveId = `save-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
   console.log(`${LOG_PREFIX} [${saveId}] Guardando OTP para ${email}: ${code}`)
 
-  const normalizedEmail = email.toLowerCase();
-
-  // Inicializar bloqueos si es necesario
-  if (!global.saveOTPLocks) {
-    global.saveOTPLocks = {};
-  }
-
-  // Verificar si ya hay una operación en curso para este email
-  if (global.saveOTPLocks[normalizedEmail]) {
-    console.log(`${LOG_PREFIX} [${saveId}] Operación ya en curso para ${normalizedEmail}, omitiendo`);
-    return false;
-  }
-
   try {
-    // Bloquear para este email
-    global.saveOTPLocks[normalizedEmail] = true;
-
     const supabase = createServerSupabaseClient()
+    const normalizedEmail = email.toLowerCase()
 
     // Calcular tiempo de expiración
     const expirationTime = new Date()
@@ -69,11 +44,6 @@ export async function saveOTP(email: string, code: string): Promise<boolean> {
 
     if (selectError) {
       console.error(`${LOG_PREFIX} [${saveId}] Error al buscar códigos existentes:`, selectError)
-    }
-
-    // Inicializar caché global si es necesario
-    if (!global.verificationCodes) {
-      global.verificationCodes = {};
     }
 
     // Si ya existe un código, actualizarlo
@@ -93,6 +63,7 @@ export async function saveOTP(email: string, code: string): Promise<boolean> {
         console.error(`${LOG_PREFIX} [${saveId}] Error al actualizar código:`, updateError)
 
         // Guardar en memoria global como respaldo
+        global.verificationCodes = global.verificationCodes || {}
         global.verificationCodes[normalizedEmail] = {
           code,
           expires: expirationTime,
@@ -118,6 +89,7 @@ export async function saveOTP(email: string, code: string): Promise<boolean> {
         console.error(`${LOG_PREFIX} [${saveId}] Error al insertar código:`, insertError)
 
         // Guardar en memoria global como respaldo
+        global.verificationCodes = global.verificationCodes || {}
         global.verificationCodes[normalizedEmail] = {
           code,
           expires: expirationTime,
@@ -130,6 +102,7 @@ export async function saveOTP(email: string, code: string): Promise<boolean> {
     }
 
     // También guardar en memoria global para redundancia
+    global.verificationCodes = global.verificationCodes || {}
     global.verificationCodes[normalizedEmail] = {
       code,
       expires: expirationTime,
@@ -141,13 +114,9 @@ export async function saveOTP(email: string, code: string): Promise<boolean> {
   } catch (error) {
     console.error(`${LOG_PREFIX} [${saveId}] Error al guardar el código OTP:`, error)
 
-    // Inicializar caché global si es necesario
-    if (!global.verificationCodes) {
-      global.verificationCodes = {};
-    }
-
     // Guardar en memoria global como último recurso
-    global.verificationCodes[normalizedEmail] = {
+    global.verificationCodes = global.verificationCodes || {}
+    global.verificationCodes[email.toLowerCase()] = {
       code,
       expires: new Date(Date.now() + OTP_EXPIRATION_MINUTES * 60000),
       saveId,
@@ -155,9 +124,6 @@ export async function saveOTP(email: string, code: string): Promise<boolean> {
     console.log(`${LOG_PREFIX} [${saveId}] Código guardado solo en memoria global (último recurso)`)
 
     return true // Devolver true porque tenemos respaldo en memoria
-  } finally {
-    // Liberar el bloqueo
-    delete global.saveOTPLocks[normalizedEmail];
   }
 }
 
@@ -171,13 +137,8 @@ export async function verifyOTP(email: string, code: string): Promise<Verificati
   try {
     const normalizedEmail = email.toLowerCase()
 
-    // Inicializar caché global si es necesario
-    if (!global.verificationCodes) {
-      global.verificationCodes = {};
-    }
-
     // Verificar primero en memoria global (más rápido y funciona como respaldo)
-    const memoryCode = global.verificationCodes[normalizedEmail]
+    const memoryCode = global.verificationCodes?.[normalizedEmail]
     if (memoryCode) {
       console.log(`${LOG_PREFIX} [${verifyId}] Código encontrado en memoria para ${normalizedEmail}`)
 

@@ -14,11 +14,8 @@ export interface NewsArticle {
   tags: string[]
 }
 
-// Definir un tipo para las claves de FALLBACK_IMAGES
-type FallbackImageKey = 'economia' | 'tipoDeCambio' | 'regulaciones' | 'venezuela' | 'default'
-
 // URLs de imágenes de respaldo (usando Unsplash para imágenes libres de derechos)
-const FALLBACK_IMAGES: Record<FallbackImageKey, string> = {
+const FALLBACK_IMAGES = {
   economia: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?q=80&w=1000&auto=format&fit=crop",
   tipoDeCambio: "https://images.unsplash.com/photo-1621155346337-1d19476ba7d6?q=80&w=1000&auto=format&fit=crop",
   regulaciones: "https://images.unsplash.com/photo-1634128221889-82ed6efebfc3?q=80&w=1000&auto=format&fit=crop",
@@ -28,7 +25,8 @@ const FALLBACK_IMAGES: Record<FallbackImageKey, string> = {
 
 // Actualizar las URLs de los feeds RSS de Google News para Venezuela
 // Modificar la constante GOOGLE_NEWS_RSS_URLS para usar consultas más específicas
-const GOOGLE_NEWS_RSS_URLS: Record<string, string> = {
+
+const GOOGLE_NEWS_RSS_URLS = {
   general: "https://news.google.com/rss/search?q=venezuela+economia+when:7d&hl=es-419&gl=VE&ceid=VE:es-419",
   economia: "https://news.google.com/rss/search?q=venezuela+economia+finanzas+when:7d&hl=es-419&gl=VE&ceid=VE:es-419",
   tipoDeCambio:
@@ -195,18 +193,9 @@ function determineTags(title: string, description: string): string[] {
   return tags
 }
 
-// Función auxiliar para obtener categoría segura
-function getSafeCategory(tags: string[]): FallbackImageKey {
-  const validCategories = Object.keys(FALLBACK_IMAGES) as FallbackImageKey[];
-  for (const tag of tags) {
-    if (validCategories.includes(tag as FallbackImageKey)) {
-      return tag as FallbackImageKey;
-    }
-  }
-  return "default";
-}
-
 // Mejorar la función getGoogleNewsRSS para manejar mejor los errores y reintentos
+
+// Función para obtener noticias de Google News RSS con reintentos
 export async function getGoogleNewsRSS(category = "general", limit = 10): Promise<NewsArticle[]> {
   const maxRetries = 3
   let retryCount = 0
@@ -269,6 +258,7 @@ export async function getGoogleNewsRSS(category = "general", limit = 10): Promis
             const description = cleanHtml(item.description || "")
             const source = extractedSource || item.source?.["#text"] || "Google News"
 
+            // Replace the existing image fetching code in the articles.map callback with this:
             // Intentar obtener una imagen para el artículo
             let imageUrl = ""
             try {
@@ -277,16 +267,19 @@ export async function getGoogleNewsRSS(category = "general", limit = 10): Promis
                 imageUrl = fetchedImageUrl
               } else {
                 // Use a category-based fallback image
-                const tags = determineTags(title, description)
-                const category = getSafeCategory(tags)
-                imageUrl = FALLBACK_IMAGES[category]
+                const category =
+                  determineTags(title, description).find((tag) => Object.keys(FALLBACK_IMAGES).includes(tag)) ||
+                  "default"
+
+                imageUrl = FALLBACK_IMAGES[category] || FALLBACK_IMAGES.default
               }
             } catch (imgError) {
               console.error(`Error al obtener imagen para ${link}:`, imgError)
               // Use a category-based fallback image
-              const tags = determineTags(title, description)
-              const category = getSafeCategory(tags)
-              imageUrl = FALLBACK_IMAGES[category]
+              const category =
+                determineTags(title, description).find((tag) => Object.keys(FALLBACK_IMAGES).includes(tag)) || "default"
+
+              imageUrl = FALLBACK_IMAGES[category] || FALLBACK_IMAGES.default
             }
 
             // Determinar las etiquetas

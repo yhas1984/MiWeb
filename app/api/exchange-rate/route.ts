@@ -1,9 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase-client"
 import { verifyToken } from "@/utils/auth"
 
 // Helper function to extract token from request headers
-function extractTokenFromRequest(request: NextRequest) {
+function extractTokenFromRequest(request) {
   const authHeader = request.headers.get("authorization")
   if (authHeader && authHeader.startsWith("Bearer ")) {
     return authHeader.substring(7) // Remove 'Bearer ' prefix
@@ -11,7 +11,7 @@ function extractTokenFromRequest(request: NextRequest) {
   return null
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request) {
   try {
     // Crear cliente de Supabase
     const supabase = createServerSupabaseClient()
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST: Actualizar tasas
-export async function POST(request: NextRequest) {
+export async function POST(request) {
   try {
     // Verificar autenticación
     const token = extractTokenFromRequest(request)

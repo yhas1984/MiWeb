@@ -2,9 +2,6 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase-client"
 import { verifyToken, extractTokenFromRequest } from "@/config/auth"
 
-// Solución: Forzar el modo dinámico para esta ruta
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   try {
     // Verificar autenticación

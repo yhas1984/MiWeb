@@ -128,7 +128,7 @@ export async function verifyOTP(email: string, code: string): Promise<Verificati
     // Verificar el código en cualquiera de las instancias
     let validCodeFound = false
     let expiredCodeFound = false
-    let userWithValidCode: User | undefined = undefined
+    let userWithValidCode: User | null = null
 
     for (const index of userIndices) {
       const user = users[index]
@@ -179,7 +179,7 @@ export async function verifyOTP(email: string, code: string): Promise<Verificati
       return {
         success: true,
         message: "Verificación exitosa",
-        user: userWithValidCode, // Ahora es User | undefined
+        user: userWithValidCode,
       }
     } else {
       return {

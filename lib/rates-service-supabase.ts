@@ -18,12 +18,6 @@ export const getRatesFromSupabase = async () => {
   try {
     const supabase = getSupabaseClient()
 
-    // Verificar si supabase es nulo
-    if (!supabase) {
-      console.error("Error: Cliente Supabase no disponible")
-      return DEFAULT_RATES
-    }
-
     // Obtener la última tasa
     const { data, error } = await supabase
       .from(RATES_TABLE)
@@ -60,12 +54,6 @@ export const saveRatesToSupabase = async (rates: { standardRate: number; premium
   try {
     // Usar el cliente adecuado según el contexto
     const supabase = isServer ? createServerSupabaseClient() : getSupabaseClient()
-
-    // Verificar si supabase es nulo
-    if (!supabase) {
-      console.error("Error: Cliente Supabase no disponible")
-      return false
-    }
 
     const { data, error } = await supabase
       .from(RATES_TABLE)

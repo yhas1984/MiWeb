@@ -7,12 +7,6 @@ import type { User } from "@/models/user"
 // Ruta al archivo JSON de usuarios registrados
 const usersFilePath = path.join(process.cwd(), "data", "registered-users.json")
 
-// Definir tipos para las propiedades globales personalizadas
-declare global {
-  var verifiedUsers: Record<string, { verified: boolean; timestamp: string }>
-  var tempRegisteredUsers: Record<string, User>
-}
-
 // POST: Actualizar manualmente el estado de verificación de un usuario
 export async function POST(request: NextRequest) {
   try {
@@ -30,15 +24,9 @@ export async function POST(request: NextRequest) {
 
     console.log(`Actualizando estado de verificación para ${email} a ${verified}`)
 
-    // Inicializar propiedades globales si no existen
-    if (!global.verifiedUsers) {
-      global.verifiedUsers = {}
-    }
-    if (!global.tempRegisteredUsers) {
-      global.tempRegisteredUsers = {}
-    }
-
     // Actualizar en memoria global
+    global.verifiedUsers = global.verifiedUsers || {}
+
     if (verified) {
       global.verifiedUsers[email] = {
         verified: true,
@@ -51,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Actualizar en memoria temporal si existe
-    if (global.tempRegisteredUsers[email]) {
+    if (global.tempRegisteredUsers && global.tempRegisteredUsers[email]) {
       global.tempRegisteredUsers[email].verified = verified
       console.log(`Usuario temporal ${email} actualizado: verified=${verified}`)
     }

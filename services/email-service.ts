@@ -36,9 +36,9 @@ export async function sendVerificationEmail(
     if (code) {
       const emailCacheKey = `email_sent_${to.toLowerCase()}_${code}`
       console.log(`${LOG_PREFIX} [${emailId}] Verificando duplicados con clave: ${emailCacheKey}`)
-      console.log(`${LOG_PREFIX} [${emailId}] ¿Existe en caché global? ${(global as any)[emailCacheKey] ? "SÍ" : "NO"}`)
+      console.log(`${LOG_PREFIX} [${emailId}] ¿Existe en caché global? ${global[emailCacheKey] ? "SÍ" : "NO"}`)
 
-      if ((global as any)[emailCacheKey]) {
+      if (global[emailCacheKey]) {
         console.log(
           `${LOG_PREFIX} [${emailId}] DUPLICADO DETECTADO: Evitando envío duplicado a ${to} con código ${code}`,
         )
@@ -48,7 +48,7 @@ export async function sendVerificationEmail(
       // Marcar este email como enviado ANTES de enviarlo realmente
       // para evitar condiciones de carrera
       console.log(`${LOG_PREFIX} [${emailId}] Marcando email como enviado en caché global`)
-      ;(global as any)[emailCacheKey] = {
+      global[emailCacheKey] = {
         timestamp: new Date().toISOString(),
         emailId,
       }
@@ -57,7 +57,7 @@ export async function sendVerificationEmail(
       setTimeout(
         () => {
           console.log(`${LOG_PREFIX} [${emailId}] Eliminando marca de caché para ${emailCacheKey}`)
-          delete (global as any)[emailCacheKey]
+          delete global[emailCacheKey]
         },
         5 * 60 * 1000,
       )

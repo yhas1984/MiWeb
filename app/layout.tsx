@@ -1,5 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { Inter } from "next/font/google"
 import "./globals.css"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -9,17 +10,10 @@ import { FloatingChat } from "@/components/floating-chat"
 import { AuthProvider } from "@/contexts/auth-context"
 import { UserProvider } from "@/contexts/user-context"
 import { Analytics } from "@vercel/analytics/react"
-import { Inter } from "next/font/google" // Cambiamos a next/font/google
 
-// Configurar la fuente Inter desde Google Fonts
-const inter = Inter({ 
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  display: 'swap',
-  variable: '--font-inter',
-})
+const inter = Inter({ subsets: ["latin"] })
 
-// URL del logo
+// URL del logo (actualizada para asegurar que funcione)
 const LOGO_URL =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-03-05%20at%2015.49.43-uEHU6vvrZTFLABzyO55Lhcb201Bdkx.jpeg"
 
@@ -70,13 +64,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={inter.variable}>
+    <html lang="es">
       <head>
         {/* Favicon directo usando la URL del logo */}
         <link rel="icon" href={LOGO_URL} />
         <link rel="apple-touch-icon" href={LOGO_URL} />
       </head>
-      <body>
+      <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <AuthProvider>
             <UserProvider>
@@ -87,6 +81,7 @@ export default function RootLayout({
                 <FloatingChat />
               </div>
               <Toaster />
+              {/* Simplificamos el uso de Analytics */}
               <Analytics />
             </UserProvider>
           </AuthProvider>
